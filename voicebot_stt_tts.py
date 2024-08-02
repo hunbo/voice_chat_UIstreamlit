@@ -1,4 +1,12 @@
 import streamlit as st
+import openai
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+api_key = os.environ.get('OPEN_API_KEY')
+client = openai.OpenAI(api_key=api_key)
+
 
 def main():
     st.set_page_config(page_title="음성 챗봇", page_icon=":스튜디오_마이크:", layout="wide")
