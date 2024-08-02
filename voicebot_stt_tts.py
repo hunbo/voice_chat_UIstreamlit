@@ -23,13 +23,34 @@ def main():
             - TTS(Text-To-Speech)는 OpenAI의 TTS를 활용합니다.
         """)
         st.markdown("")
+
+    system_content = "You are a thoughtful assistant. Respond to all input in 25 words and answer in korea"
+
+    if "chat" not in st.session_state:
+        st.session_state["chat"] = []
+    if "message" not in st.session_state:
+        st.session_state["messages"] = [{"role":"system", "content": system_content}]
+    if "check_reset" not in st.session_state:
+        st.session_state["check_reset"] = False
+
+
     with st.sidebar:
         
         model = st.radio(label="GPT 모델 선택", options=["gpt-3.5-turbo", "gpt-4o", "gpt-4-turbo"])
         st.markdown("---")
     
         if st.button(label = "초기화"):
-            pass
+            st.session_state["chat"] = []
+            st.session_state["messages"] = [{"role": "system", "content": system_content}]
+            st.session_state["check_reset"] = True
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("질문하기")
+
+    with col2:
+        st.subheader("질문/답변")
+
 
 if __name__ == "__main__":
     print(__name__, "실행")
