@@ -21,6 +21,12 @@ def STT(speech):
     os.remove(filename)
     return transcription.text    
 
+def ask_gpt(prompt, model):
+    response = client.chat.completions.create(
+        model=model,
+        messages=prompt
+    )
+    return response.choices[0].message.content
 
 def main():
     st.set_page_config(page_title="음성 챗봇", page_icon=":스튜디오_마이크:", layout="wide")
@@ -77,6 +83,21 @@ def main():
 
     with col2:
         st.subheader("질문/답변")
+
+        if (audio.duration_seconds > 0) and (st.session_state["check_reset"] == False):
+            response = ask_gpt(st.session_state["messages"], model)
+            st.session_state["messages"] += [{"role": "system", "content": response}]
+            now = datetime.now().strftime("%H:%M")
+            st.session_state["chat"] += [{"bot",now,response}]
+
+            for sender, time, message in st.session_state["chat"]:
+                if sender == "user":
+                    st.write(f'<div style="display:flex;align-items:center;"><div style="background-color:#007AFF;color:white;border-radius:12px;padding:8px 12px;margin-right:8px;">{message}</div><div style="font-size:0.8rem;color:gray;">{time}</div></div>', 
+                             unsafe_allow_html=True)
+                    st.write("")
+
+        else:
+            st.session_state["check_reset"] = False
 
 
 
