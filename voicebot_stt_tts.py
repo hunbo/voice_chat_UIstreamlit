@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 from audiorecorder import audiorecorder
 from datetime import datetime
+import base64
+
 api_key = os.environ.get('OPEN_API_KEY')
 client = openai.OpenAI(api_key=api_key)
 
@@ -27,6 +29,27 @@ def ask_gpt(prompt, model):
         messages=prompt
     )
     return response.choices[0].message.content
+
+def TTS(text):
+    filename = "output.mp3"
+    response = client.audio.speech.create(
+        model = "tts-1",
+        voice = "alloy",
+        input = text
+    )
+    response.stream_to_file(filename)
+
+    with open(filename,"rb") as f:
+        data = f.read()
+        b64 = base64.b64encode(data).decode()
+        md = f"""
+            <audio autoplay="True">
+            <source src="data:audio/mp3;base64,{b64}" type="audio/mp3">
+            </audio>
+            """
+        st.markdown(md, unsafe_allow_html=True)
+
+    os.remove(filename)
 
 def main():
     st.set_page_config(page_title="음성 챗봇", page_icon=":스튜디오_마이크:", layout="wide")
@@ -75,7 +98,7 @@ def main():
 
             question = STT(audio)
 
-            now = datetime.now().strftime("$H:%M")
+            now = datetime.now().strftime("%H:%M")
             st.session_state["chat"] = st.session_state["chat"] + [("user", now, question)]
             st.session_state["messages"] = st.session_state["messages"] + [{"role": "user", "content": question}]
 
@@ -86,15 +109,21 @@ def main():
 
         if (audio.duration_seconds > 0) and (st.session_state["check_reset"] == False):
             response = ask_gpt(st.session_state["messages"], model)
-            st.session_state["messages"] += [{"role": "system", "content": response}]
+            st.session_state["messages"] = st.session_state["messages"] + [{"role": "system", "content": response}]
             now = datetime.now().strftime("%H:%M")
-            st.session_state["chat"] += [{"bot",now,response}]
+            st.session_state["chat"] = st.session_state["chat"] + [{"bot",now,response}]
 
             for sender, time, message in st.session_state["chat"]:
                 if sender == "user":
                     st.write(f'<div style="display:flex;align-items:center;"><div style="background-color:#007AFF;color:white;border-radius:12px;padding:8px 12px;margin-right:8px;">{message}</div><div style="font-size:0.8rem;color:gray;">{time}</div></div>', 
                              unsafe_allow_html=True)
                     st.write("")
+                else:
+                    st.write(f'<div style="display:flex;align-items:center;justify-content:flex-end;"><div style="background-color:lightgray;border-radius:12px;padding:8px 12px;margin-left:8px;">{message}</div><div style="font-size:0.8rem;color:gray;">{time}</div></div>', 
+                             unsafe_allow_html=True)
+                    st.write("")
+                
+            TTS(response)
 
         else:
             st.session_state["check_reset"] = False
